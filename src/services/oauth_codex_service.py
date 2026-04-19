@@ -473,6 +473,40 @@ def get_raw_oauth_tokens(db: Session, key_id: uuid.UUID) -> Optional[dict]:
     return decrypt_oauth_data(key.oauth_data)
 
 
+def _coerce_expires_at_to_epoch(value) -> float:
+    """Normalize an expires_at value to a Unix epoch (seconds, float).
+
+    The database stores expires_at as an ISO-8601 string (human friendly,
+    timezone aware). LiteLLM's chatgpt/ provider, on the other hand, reads
+    auth.json and calls float(expires_at) directly
+    (litellm/llms/chatgpt/authenticator.py:_is_token_expired), so we must
+    persist a number there or it raises ValueError and the chat endpoint
+    returns 503 via the auth middleware wrapper.
+
+    Accepts:
+      - None / empty  -> 0 (LiteLLM treats 0 as "expired", triggers refresh)
+      - int / float   -> returned as float
+      - ISO-8601 str  -> parsed and converted to epoch
+      - anything else -> 0
+    """
+    if value is None or value == "":
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        # try numeric string first (e.g. "1750000000.123")
+        try:
+            return float(value)
+        except ValueError:
+            pass
+        try:
+            return datetime.fromisoformat(value).timestamp()
+        except ValueError:
+            logger.warning(f"Could not parse expires_at={value!r}; treating as expired")
+            return 0.0
+    return 0.0
+
+
 def write_chatgpt_auth_json(tokens: dict) -> None:
     """Write OAuth tokens to LiteLLM's chatgpt auth.json file.
 
@@ -497,7 +531,7 @@ def write_chatgpt_auth_json(tokens: dict) -> None:
     auth_data = {
         "access_token": tokens.get("access_token", ""),
         "refresh_token": tokens.get("refresh_token", ""),
-        "expires_at": tokens.get("expires_at", 0),
+        "expires_at": _coerce_expires_at_to_epoch(tokens.get("expires_at")),
         "account_id": tokens.get("account_id", ""),
     }
 
