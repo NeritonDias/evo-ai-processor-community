@@ -80,9 +80,7 @@ class GeminiWithApiKey(Gemini):
         #     "type": "service_account",
         #     "project_id": "evolution-api-433821",
         #     "private_key_id": "REPLACE_ME_PRIVATE_KEY_ID",
-        #     "private_key": "-----BEGIN PRIVATE KEY-----
-REPLACE_ME_PRIVATE_KEY
------END PRIVATE KEY-----\n",
+        #     "private_key": "-----BEGIN PRIVATE KEY-----\nREPLACE_ME_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
         #     "client_email": "evo-ai@evolution-api-433821.iam.gserviceaccount.com",
         #     "client_id": "104060719980706869243",
         #     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
