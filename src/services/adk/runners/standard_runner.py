@@ -31,6 +31,7 @@ from google.adk.sessions import DatabaseSessionService
 from google.adk.memory.base_memory_service import BaseMemoryService
 from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
 from src.utils.logger import setup_logger
+from fastapi import HTTPException
 from src.core.exceptions import AgentNotFoundError, InternalServerError, UpstreamProviderError
 from src.services.adk.runners.runner_utils import RunnerUtils, convert_sets
 from sqlalchemy.orm import Session
@@ -507,6 +508,14 @@ class StandardRunner:
         except AgentNotFoundError as e:
             logger.error(f"Agent not found: {str(e)}")
             raise e
+        except HTTPException:
+            # Preserve any HTTPException (e.g. UpstreamProviderError 502
+            # raised by the inner block, or InternalServerError already
+            # mapped) with its real status_code and structured detail
+            # instead of re-wrapping it as InternalServerError(str(e)),
+            # which would coerce the dict detail into the string
+            # "502: {...}" and downgrade the status to 500.
+            raise
         except Exception as e:
             logger.error(f"Internal error processing request: {str(e)}", exc_info=True)
             raise InternalServerError(str(e))
