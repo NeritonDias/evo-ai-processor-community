@@ -1,6 +1,6 @@
 a2a-sdk==0.2.4
 aiohappyeyeballs==2.6.1
-aiohttp==3.12.15
+aiohttp==3.13.5
 aiosignal==1.4.0
 aiosqlite==0.21.0
 alembic==1.15.2
@@ -16,7 +16,7 @@ cachetools==5.5.2
 certifi==2025.8.3
 cffi==1.17.1
 charset-normalizer==3.4.3
-click==8.2.1
+click==8.1.8
 cloudpickle==3.1.1
 coverage==7.10.6
 cryptography==45.0.7
@@ -73,13 +73,13 @@ httpx-sse==0.4.0
 huggingface-hub==0.34.4
 hyperframe==6.1.0
 idna==3.10
-importlib-metadata==8.6.1
+importlib-metadata==8.5.0
 iniconfig==2.1.0
 jinja2==3.1.6
 jiter==0.10.0
 jsonpatch==1.33
 jsonpointer==3.0.0
-jsonschema==4.25.1
+jsonschema==4.23.0
 jsonschema-specifications==2025.9.1
 langchain-core==0.3.75
 langgraph==0.4.1
@@ -97,7 +97,7 @@ multidict==6.6.4
 mypy-extensions==1.1.0
 numpy==2.3.2
 oauthlib==3.3.1
-openai==1.69.0
+openai==2.30.0
 opensearch-py==2.8.0
 opentelemetry-api==1.37.0
 opentelemetry-exporter-gcp-logging==1.11.0a0
@@ -131,8 +131,8 @@ pyasn1-modules==0.4.1
 pycodestyle==2.13.0
 pycparser==2.22
 pycryptodome==3.23.0
-pydantic==2.11.3
-pydantic-core==2.33.1
+pydantic==2.12.5
+pydantic-core==2.41.5
 pydantic-settings==2.9.1
 pyflakes==3.3.2
 pyjwt==2.9.0
@@ -141,7 +141,7 @@ pytest==8.3.5
 pytest-asyncio==0.26.0
 pytest-cov==6.1.1
 python-dateutil==2.9.0.post0
-python-dotenv==1.1.0
+python-dotenv==1.0.1
 python-jose==3.4.0
 python-multipart==0.0.20
 pyyaml==6.0.2
@@ -163,11 +163,11 @@ sqlparse==0.5.3
 sse-starlette==3.0.2
 starlette==0.46.2
 tenacity==9.1.2
-tiktoken==0.11.0
-tokenizers==0.22.0
+tiktoken==0.12.0
+tokenizers==0.22.2
 tqdm==4.67.1
 typing-extensions==4.15.0
-typing-inspection==0.4.1
+typing-inspection==0.4.2
 tzlocal==5.3.1
 uritemplate==4.2.0
 urllib3==2.5.0
