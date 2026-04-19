@@ -79,20 +79,50 @@ async def generate_auth_url(
 
     pending = encrypt_oauth_data({"pending_verifier": code_verifier, "state": state})
 
-    api_key_record = ApiKey(
-        id=uuid.uuid4(),
-        name=name.strip() or "OpenAI Codex",
-        provider="openai-codex",
-        key=None,
-        auth_type="oauth_codex",
-        oauth_data=pending,
-        is_active=False,
-    )
+    record_name = name.strip() or "OpenAI Codex"
 
+    # The evo_core_api_keys table has a UNIQUE index on `name`, which the
+    # Core Go service owns and we can't drop from here. A user reconnecting
+    # their ChatGPT account would otherwise hit:
+    #   psycopg2.errors.UniqueViolation: duplicate key value violates unique
+    #   constraint "idx_evo_core_api_keys_name_unique"
+    # Handle that case explicitly: if an oauth_codex record already exists
+    # for this (name, auth_type), reuse the row — overwrite pending PKCE
+    # state and flip it back to inactive until auth-complete. If a row with
+    # the same name exists under a different auth_type, fall back to a
+    # unique suffix so we don't clobber an unrelated API key.
     try:
-        db.add(api_key_record)
-        db.commit()
-        db.refresh(api_key_record)
+        existing = (
+            db.query(ApiKey)
+            .filter(ApiKey.name == record_name)
+            .with_for_update()
+            .first()
+        )
+        if existing and existing.auth_type == "oauth_codex":
+            existing.oauth_data = pending
+            existing.is_active = False
+            existing.provider = "openai-codex"
+            existing.key = None
+            db.commit()
+            db.refresh(existing)
+            api_key_record = existing
+        else:
+            if existing:
+                # Different auth_type with same name — don't touch it.
+                # Append a short unique suffix to avoid the UNIQUE collision.
+                record_name = f"{record_name} (codex {uuid.uuid4().hex[:6]})"
+            api_key_record = ApiKey(
+                id=uuid.uuid4(),
+                name=record_name,
+                provider="openai-codex",
+                key=None,
+                auth_type="oauth_codex",
+                oauth_data=pending,
+                is_active=False,
+            )
+            db.add(api_key_record)
+            db.commit()
+            db.refresh(api_key_record)
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"Error creating OAuth API key record: {str(e)}")

@@ -57,11 +57,11 @@ def map_status_to_error_code(status_code: int) -> str:
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """
     Global handler for HTTPException to convert to standardized error format
-    
+
     Args:
         request: FastAPI request object
         exc: HTTPException instance
-    
+
     Returns:
         JSONResponse with standardized error format
     """
@@ -69,14 +69,15 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     error_code = map_status_to_error_code(exc.status_code)
     error_message = str(exc.detail)
     error_details = None
-    
+
     # Check if detail is a dict (from BaseAPIException)
     if isinstance(exc.detail, dict):
         error_code = exc.detail.get("error_code", error_code)
         error_message = exc.detail.get("error", error_message)
         error_details = exc.detail.get("details")
-    
+
     return error_response(
+        request=request,
         code=error_code,
         message=error_message,
         details=error_details,
@@ -87,11 +88,11 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 async def base_api_exception_handler(request: Request, exc: BaseAPIException) -> JSONResponse:
     """
     Handler for BaseAPIException to convert to standardized error format
-    
+
     Args:
         request: FastAPI request object
         exc: BaseAPIException instance
-    
+
     Returns:
         JSONResponse with standardized error format
     """
@@ -99,11 +100,12 @@ async def base_api_exception_handler(request: Request, exc: BaseAPIException) ->
     error_code = getattr(exc, 'error_code', None)
     if not error_code:
         error_code = map_status_to_error_code(exc.status_code)
-    
+
     error_message = str(exc.detail.get("error", exc.detail)) if isinstance(exc.detail, dict) else str(exc.detail)
     error_details = exc.detail.get("details") if isinstance(exc.detail, dict) else None
-    
+
     return error_response(
+        request=request,
         code=error_code,
         message=error_message,
         details=error_details,
