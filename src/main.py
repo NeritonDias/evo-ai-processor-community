@@ -108,15 +108,6 @@ app.add_middleware(
     EvoAuthMiddleware
 )
 
-# CORS - added after other middlewares so it wraps them (last added = first executed in Starlette)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Rate limiting middleware
 app.add_middleware(
     GlobalRateLimitMiddleware,
@@ -129,6 +120,22 @@ app.add_middleware(
     requests_per_second=settings.RATE_LIMIT_CLIENT_RPS,
     burst=settings.RATE_LIMIT_CLIENT_BURST,
     cleanup_interval=settings.RATE_LIMIT_CLEANUP_INTERVAL
+)
+
+# CORS must be the LAST middleware added so that in Starlette it becomes the
+# outermost layer. Only then does it see every outgoing response — including
+# the JSONResponse produced by app.add_exception_handler() / our
+# http_exception_handler when the chat endpoint raises UpstreamProviderError
+# (502) or any other HTTPException. Without this, the error response left the
+# server without 'Access-Control-Allow-Origin' and the browser discarded it
+# as a CORS violation, so the user saw 'Network Error' instead of our
+# friendly 502 message.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Static files configuration
