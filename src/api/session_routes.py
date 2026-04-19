@@ -70,6 +70,7 @@ from src.schemas.schemas import (
 import logging
 from src.api.dependencies import verify_agent_access, get_current_user, get_request_optional
 from src.api.a2a_routes import verify_api_key
+from src.services.adk.runners.runner_utils import convert_sets
 from src.middleware.permissions import RequirePermission
 from src.services.agent_service import get_agent
 from src.utils.response import success_response, error_response, map_status_to_error_code
@@ -775,7 +776,7 @@ async def get_agent_messages(
             logger.warning(f"Session {session_id}: {skipped_count} event(s) skipped due to processing errors")
 
         return success_response(
-            data=processed_events,
+            data=convert_sets(processed_events),
             message=f"Session messages retrieved successfully (skipped {skipped_count})" if skipped_count > 0
             else "Session messages retrieved successfully"
         )
