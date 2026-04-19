@@ -193,11 +193,29 @@ def error_response(
             method=request.method
         )
     )
-        
-    return JSONResponse(
+
+    json_response = JSONResponse(
         status_code=status_code,
         content=response.model_dump(exclude_none=True)
     )
+
+    # CORS headers must be attached here. JSONResponses produced by
+    # app.add_exception_handler() bypass CORSMiddleware in Starlette —
+    # they leave through ExceptionMiddleware above the user middleware
+    # stack, so no reordering of add_middleware() makes CORS run on
+    # them. Without this, a 4xx/5xx returned from the chat endpoint
+    # arrives at the browser without Access-Control-Allow-Origin and
+    # shows up as "Network Error" instead of our JSON body.
+    origin = request.headers.get("origin")
+    if origin:
+        json_response.headers["access-control-allow-origin"] = origin
+        json_response.headers["vary"] = "Origin"
+    else:
+        json_response.headers["access-control-allow-origin"] = "*"
+    json_response.headers["access-control-allow-credentials"] = "false"
+    json_response.headers["access-control-expose-headers"] = "*"
+
+    return json_response
 
 
 def paginated_response(
