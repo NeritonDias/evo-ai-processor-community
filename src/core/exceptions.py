@@ -87,3 +87,19 @@ class InternalServerError(BaseAPIException):
         super().__init__(
             status_code=500, message=message, error_code=INTERNAL_ERROR
         )
+
+
+class UpstreamProviderError(BaseAPIException):
+    """Exception for a failure at the upstream LLM provider (LiteLLM / OpenAI
+    / ChatGPT backend). Surfaces as 502 Bad Gateway with a user-friendly
+    message so the frontend can distinguish 'our service is down' (5xx from
+    us) vs 'the third-party LLM failed' (5xx from them).
+    """
+
+    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
+        super().__init__(
+            status_code=502,
+            message=message,
+            error_code=INTERNAL_ERROR,
+            details=details,
+        )

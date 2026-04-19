@@ -27,7 +27,7 @@
 └──────────────────────────────────────────────────────────────────────────────┘
 """
 
-from fastapi import Request
+from fastapi import Request, HTTPException
 import uuid
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -261,6 +261,12 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
             return self._service_unavailable_response(str(e))
         except ServiceUnavailableError as e:
             return self._service_unavailable_response(str(e))
+        except HTTPException:
+            # Let FastAPI-level exceptions propagate with their own status code
+            # (e.g. 404 from AgentNotFoundError, 500 from InternalServerError,
+            # 502 from UpstreamApiError). Previously these were being masked as
+            # 503 "Authentication service error", which hid the real cause.
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in EvoAuth middleware: {e}")
             return self._service_unavailable_response("Authentication service error")

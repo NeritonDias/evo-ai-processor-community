@@ -31,7 +31,7 @@ from google.adk.sessions import DatabaseSessionService
 from google.adk.memory.base_memory_service import BaseMemoryService
 from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
 from src.utils.logger import setup_logger
-from src.core.exceptions import AgentNotFoundError, InternalServerError
+from src.core.exceptions import AgentNotFoundError, InternalServerError, UpstreamProviderError
 from src.services.adk.runners.runner_utils import RunnerUtils, convert_sets
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
@@ -473,6 +473,26 @@ class StandardRunner:
 
             except Exception as e:
                 logger.error(f"Error processing request: {str(e)}")
+                # Translate known upstream provider failures into a 502 with a
+                # user-friendly message so the frontend can tell the user
+                # "the LLM provider did not answer" vs "our service broke".
+                # "Unknown items in responses API response" comes from the
+                # LiteLLM chatgpt/ provider when the ChatGPT backend
+                # (chatgpt.com/backend-api/codex) silently returns an empty
+                # output — typically rate-limit / anti-abuse throttling when
+                # a ChatGPT subscription token is used server-side.
+                err_msg = str(e)
+                if "Unknown items in responses API response" in err_msg:
+                    raise UpstreamProviderError(
+                        message=(
+                            "O backend do ChatGPT (Codex) retornou resposta vazia. "
+                            "Isso costuma indicar rate-limit no seu plano ChatGPT, "
+                            "ou uso fora do Codex CLI. Tente novamente em alguns "
+                            "minutos ou use uma API key OpenAI tradicional neste "
+                            "agente."
+                        ),
+                        details={"upstream_error": err_msg[:500]},
+                    ) from e
                 raise InternalServerError(str(e)) from e
 
             # Note: We no longer save the entire session to memory at the end
