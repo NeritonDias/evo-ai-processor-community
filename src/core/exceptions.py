@@ -91,23 +91,14 @@ class InternalServerError(BaseAPIException):
 
 class UpstreamProviderError(BaseAPIException):
     """Exception for a failure at the upstream LLM provider (LiteLLM / OpenAI
-    / ChatGPT backend).
-
-    Returns 422 Unprocessable Entity instead of 502 Bad Gateway. Semantically
-    both are defensible ("the upstream we relied on did not give us a
-    processable response"), but 422 has one critical operational advantage
-    in front of Cloudflare: Cloudflare's edge silently rewrites 5xx
-    responses from the origin into its own generic error page (text/plain,
-    no CORS), which made our friendly Portuguese message and CORS headers
-    invisible to the browser. Cloudflare passes 4xx responses through
-    untouched, so 422 lets the real JSON body reach the frontend so the user
-    can read what actually went wrong (rate-limit, plan tier, whatever) and
-    switch to an OpenAI API key if needed.
+    / ChatGPT backend). Surfaces as 502 Bad Gateway with a user-friendly
+    message so the frontend can distinguish 'our service is down' (5xx from
+    us) vs 'the third-party LLM failed' (5xx from them).
     """
 
     def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
         super().__init__(
-            status_code=422,
+            status_code=502,
             message=message,
             error_code=INTERNAL_ERROR,
             details=details,
